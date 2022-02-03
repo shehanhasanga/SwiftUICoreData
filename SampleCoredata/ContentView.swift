@@ -10,7 +10,7 @@ import CoreData
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
-
+    @State var task :String = ""
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
         animation: .default)
@@ -18,34 +18,72 @@ struct ContentView: View {
 
     var body: some View {
         NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+            VStack {
+                VStack(spacing:20){
+                    TextField("New Task",text: $task)
+                        .frame(height: 48.0)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                        .padding()
+                    Button{
+                        self.addItem()
+                    } label:{
+                        Spacer()
+                        Text("Save")
+                        Spacer()
                     }
+                    .frame(height:40.0)
+                    .background(.blue)
+                    .foregroundColor(.white)
+                    .clipShape(Capsule())
+                    .padding(.horizontal,40)
+                   
+                    
+                    
                 }
-                .onDelete(perform: deleteItems)
+                .navigationBarTitle("Tasks", displayMode: .large)
+                
+                List {
+                    ForEach(items) { item in
+                        NavigationLink {
+                            Text("Item at \(item.timestamp!, formatter: itemFormatter)")
+                        } label: {
+                            VStack(alignment:.leading){
+                                Text(item.task ?? "")
+                                    .font(.headline)
+                                    .fontWeight(.bold)
+                                Text(item.timestamp!, formatter: itemFormatter)
+                                    .font(.footnote)
+                                    .foregroundColor(.gray)
+                            }
+                           
+                        }
+                    }
+                    .onDelete(perform: deleteItems)
+                }
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        EditButton()
+                    }
+                    ToolbarItem {
+                        Button(action: addItem) {
+                            Label("Add Item", systemImage: "plus")
+                        }
+                    }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
             }
             Text("Select an item")
         }
+       
     }
 
     private func addItem() {
         withAnimation {
             let newItem = Item(context: viewContext)
             newItem.timestamp = Date()
+            newItem.id = UUID()
+            newItem.task = task
+            newItem.completed = false
 
             do {
                 try viewContext.save()
